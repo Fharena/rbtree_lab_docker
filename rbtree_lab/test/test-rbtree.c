@@ -12,7 +12,7 @@ void test_init(void)
 #ifdef SENTINEL
   assert(t->nil != NULL);
   assert(t->root == t->nil);
-#else
+#else 
   assert(t->root == NULL);
 #endif
   delete_rbtree(t);

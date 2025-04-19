@@ -3,15 +3,15 @@
 #include <stdlib.h>
 
 
-
 void right_rotate(rbtree *t, node_t *node){//left 로테이트에서 방향들만 수정
   node_t *y=node->left;
   node->left=y->right; 
-  if(y->right != t->nil) y->right->parent = node; 
+  if(y->right != t->nil) 
+  y->right->parent = node; 
   y->parent= node->parent;
-  if(node == t->root) t->root =y;
+  if(node->parent == t->nil) t->root =y;
   else if (node == node->parent->left) {
-    node->parent->left = y;          
+    node->parent->left = y;         
   }
   else node->parent->right = y;         
   
@@ -22,9 +22,10 @@ void right_rotate(rbtree *t, node_t *node){//left 로테이트에서 방향들�
 void left_rotate(rbtree *t, node_t *node){
   node_t *y=node->right;
   node->right=y->left; //서브트리부터 옮기고
-  if(y->left != t->nil) y->left->parent = node; //서브트리가 NIL이 아니면 부모도 노드로 바꿔줌(NIL이면 부모가 없기 때문)
+  if(y->left != t->nil)
+  y->left->parent = node; //서브트리가 NIL이 아니면 부모도 노드로 바꿔줌(NIL이면 부모가 없기 때문)
   y->parent= node->parent;//부모 바꿔주고
-  if(node == t->root) t->root =y;
+  if(node->parent == t->nil) t->root =y;
   else if (node == node->parent->left) {
     node->parent->left = y;           // x가 왼쪽 자식이면 y를 왼쪽에
   }
@@ -34,7 +35,17 @@ void left_rotate(rbtree *t, node_t *node){
   y->left = node;                     // x를 y의 왼쪽 자식으로
   node->parent = y;  
 }
+node_t *rbtree_find(const rbtree *t, const key_t key) {
+  node_t *temp = t->root;
+  while(temp != t->nil){//같을때까지 루프
+    if(temp->key == key)return temp;//테스트케이스 통과하려면 NULL이어야댐.
+    else if(temp->key <key)temp=temp->right;//현재 포인터 키가 찾으려는 키보다 작으면 포인터를 오른쪽으로
+    else temp=temp->left;//아님 왼쪽
 
+    
+  }
+  return NULL;
+}
 void rbtree_insert_fix(rbtree *t, node_t *node){
   //부모가 black일때는 문제 없으므로
   while (node->parent->color==RBTREE_RED){//부모가 레드면 반복적으로 픽스
@@ -45,6 +56,7 @@ void rbtree_insert_fix(rbtree *t, node_t *node){
         node->parent->parent->color = RBTREE_RED; //조부모를 red으로 바꾸고
         node->parent->color = RBTREE_BLACK; //부모는 black
         u->color = RBTREE_BLACK; //삼촌도 BLACK
+        node=node->parent->parent;
       }
       else{  //삼촌이 red가 아니고
         if(node == node->parent->right){//꺾인 상황, 즉 체크중인 노드가 부모의 오른쪽일때.  == case 2, case2는 3으로 바꿔서 진행
@@ -64,6 +76,7 @@ void rbtree_insert_fix(rbtree *t, node_t *node){
         node->parent->parent->color = RBTREE_RED; //조부모를 red으로 바꾸고
         node->parent->color = RBTREE_BLACK; //부모는 black
         u->color = RBTREE_BLACK; //삼촌도 BLACK
+        node=node->parent->parent;
       }
       else{  //삼촌이 red가 아니고
         if(node == node->parent->left){//꺾인 상황, 즉 체크중인 노드가 부모의 왼쪽일때.  == case 2, case2는 3으로 바꿔서 진행
@@ -111,72 +124,111 @@ void delete_rbtree(rbtree *t) {
 }
 
 node_t *rbtree_insert(rbtree *t, const key_t key) {
+  // if(rbtree_find(t,key)) return t->root;//중복
   node_t *node = (node_t *)malloc(sizeof(node_t));
   node->key = key;
-  node->color = RBTREE_RED;  // 노드추가는 무조건 RED
-  node->left = t->nil;
-  node->right = t->nil;
   node->parent = t->nil;//이거만 수정할거임
   
   node_t *cur = t->root;
   node_t *prev = t->nil;
   while(cur!=t->nil){//비어있는 리프노드까지 이동(==nil)
     prev=cur;
-    if((cur->key) < (node->key))cur = cur->right;
-    else cur = cur->left;
+    if((node->key) < (cur->key))cur = cur->left;
+    else cur = cur->right;
   }
   node->parent = prev;
-  if (t->root == t->nil) {
+  if (prev == t->nil) {
     t->root = node;
   }
   else if((node->key)<(prev->key)){//추가한 노드의 키보다 부모노드가 크면
     prev->left = node;//부모의 왼쪽 노드로
   }
   else prev->right = node;//아니면 부모의 오른쪽 노드로
-  rbtree_insert_fix(t,node);
-  return t->root;
+  node->left = t->nil;
+  node->right = t->nil;
+  node->color = RBTREE_RED;  // 노드추가는 무조건 RED
+  rbtree_insert_fix(t, node);
+  return node;
 }
 
 
 
 
-node_t *rbtree_find(const rbtree *t, const key_t key) {
-  node_t *temp = t->root;
-  while(temp != t->nil){//같을때까지 루프
-    if(temp->key == key)return temp;//테스트케이스 통과하려면 NULL이어야댐.
-    else if(temp->key <key)temp=temp->right;//현재 포인터 키가 찾으려는 키보다 작으면 포인터를 오른쪽으로
-    else temp=temp->left;//아님 왼쪽
 
-    
-  }
-  return NULL;
-}
 
 node_t *rbtree_min(const rbtree *t) {
-  // TODO: implement find
-  return t->root;
+  node_t *temp = t->root;
+  while(temp->left != t->nil){//왼쪽자식이 nil이면 스톱.
+    temp=temp->left;
+  }
+  return temp;
 }
 
 node_t *rbtree_max(const rbtree *t) {
-  // TODO: implement find
-  return t->root;
+  node_t *temp = t->root;
+  while(temp->right != t->nil){//오른쪽자식이 nil이면 스톱.
+    temp=temp->right;
+  }
+  return temp;
 }
 void rbtree_erase_fix(rbtree *t, node_t *node){
-  while(node != t->root && node ->color == RBTREE_BLACK){//루트가 아니며, 색이 블랙인 경우를 double black으로 판단.
+  while((node != t->root) && (node ->color == RBTREE_BLACK)){//루트가 아니며, 색이 블랙인 경우를 double black으로 판단.
     if (node == node->parent->left) { // insert fix와 비슷하게 체크하는 노드가 왼쪽인 경우부터 확인
       node_t *brother = node->parent->right;
-      if(brother->color == RBTREE_RED){//case1: 형제노드가 빨갈때.
+      if(brother->color == RBTREE_RED){//case1: 형제노드가 빨갈때. -> case1은 진행하면 2,3,4중 하나로 바뀜.
         brother->color=RBTREE_BLACK;
         node->parent->color =  RBTREE_RED;
         left_rotate(t,node->parent);
         brother = node->parent->right;
       }
-      if(brother->left->color == RBTREE_BLACK && brother->right->color == RBTREE_BLACK){//case2 체크 할 노드와 형제가 둘다 검정일때
+      if((brother->left->color == RBTREE_BLACK) && (brother->right->color == RBTREE_BLACK)){//case2 체크 할 노드와 형제가 둘다 검정일때
         brother->color=RBTREE_RED;
         node = node->parent; // 다음 체크할 노드로 설정
       }
+      else {
+        if(brother->right->color == RBTREE_BLACK){//case3: 형제의 왼쪽 자식이 빨강인경우,꺾인경우 임. 펴가지고 case4로 넘김
+          brother->left->color = RBTREE_BLACK;
+          brother->color = RBTREE_RED;
+          right_rotate(t,brother);
+          brother=node->parent->right;
+        }
+        //case4: 3에서는 무조건 여기로 넘어옴. 형제의 오른쪽이 red인 경우고 부모랑 형제의 왼쪽 자식 색까은 상관없음.
+        brother->color=node->parent->color;
+        node->parent->color=RBTREE_BLACK;
+        brother->right->color=RBTREE_BLACK;
+        left_rotate(t,node->parent);
+        node = t->root;
+      }
+    }
+    else{
+      node_t *brother = node->parent->left;
+      if(brother->color == RBTREE_RED){//case1: 형제노드가 빨갈때. -> case1은 진행하면 2,3,4중 하나로 바뀜.
+        brother->color=RBTREE_BLACK;
+        node->parent->color =  RBTREE_RED;
+        right_rotate(t,node->parent);
+        brother = node->parent->left;
+      }
+      if((brother->left->color == RBTREE_BLACK) && (brother->right->color == RBTREE_BLACK)){//case2 체크 할 노드와 형제가 둘다 검정일때
+        brother->color=RBTREE_RED;
+        node = node->parent; // 다음 체크할 노드로 설정
+      }
+      else {
+        if(brother->left->color == RBTREE_BLACK){//case3: 형제의 왼쪽 자식이 빨강인경우,꺾인경우 임. 펴가지고 case4로 넘김
+          brother->right->color = RBTREE_BLACK;
+          brother->color = RBTREE_RED;
+          left_rotate(t,brother);
+          brother=node->parent->left;
+        }
+        //case4: 3에서는 무조건 여기로 넘어옴. 형제의 오른쪽이 red인 경우고 부모랑 형제의 왼쪽 자식 색까은 상관없음.
+        brother->color=node->parent->color;
+        node->parent->color=RBTREE_BLACK;
+        brother->left->color=RBTREE_BLACK;
+        right_rotate(t,node->parent);
+        node = t->root;
+      }
     }
   }
+  node->color = RBTREE_BLACK;  //<--이거 건들면 파일구조 무너짐.
 
 }
 
@@ -186,7 +238,6 @@ void rb_transplant(rbtree *t, node_t *u, node_t *v){//트리에서 지워질 u�
   else if(u == u->parent->left) u->parent->left=v;//지울노드가 부모의 왼쪽 노드일때
 
   else u->parent->right=v;
-  //마지막으로 삭제 노드기준 부모도 대체해주기.
   v->parent = u->parent;
 }
 node_t *rbtree_min_from(node_t *node, node_t *nil) {//서브트리 최솟값찾기.
@@ -198,44 +249,51 @@ node_t *rbtree_min_from(node_t *node, node_t *nil) {//서브트리 최솟값찾�
 
 int rbtree_erase(rbtree *t, node_t *p) {
   node_t *y = p;
+  node_t *x;
   color_t y_original_color = y->color; //삭제되는 색 지정
   //자녀 한명만 우에 있는경우
   if (p->left == t->nil){
-    node_t *x = p->right;
+    x = p->right;
     rb_transplant(t,p,p->right);
-    free(p);
   }
   //자녀 한명만 좌에 있는 경우
   else if (p->right == t->nil){
-    node_t *x = p->left;
+    x = p->left;
     rb_transplant(t,p,p->left);
-    free(p);
   }
   //자녀가 두명 이상인 경우
   else{
     y= rbtree_min_from(p->right,t->nil); //y는 오른쪽 서브트리의 가장 작은 값을 가리키는 포인터임.
     y_original_color = y->color; // 이 조건에서 y는 실질적으로 삭제할노드를 가리키므로 색 갱신.
-    node_t *x = y->right;
+    x = y->right;
     if(y != p->right){//처음 지우려던 위치 바로 한칸 아래가 아닐경우
       rb_transplant(t,y,y->right);//y적출하고 y->right 붙이고, 안에서 y의 오른쪽이 nil이면 알아서 nil 부모 세팅해줌
       //이 다음에 한번더 rb_transplant를 통해 제거했던 y를 z에 붙일거기 때문에 y의 오른쪽 세팅.
       y->right = p->right;
       y->right->parent = y;
     }
-    else{//처음 지우려던 위치 바로 한칸 아래일경우, x == nil임.
-      x->parent = y; // fix 가서 사용해야하므로 nil에 부모 설정.(nil의 더블블랙.)
-      rb_transplant(t,p,y);
-      y->left = p->left;
-      y->parent = y;
-      y->color = p->color;
-    }
+    else x->parent = y;//처음 지우려던 위치 바로 한칸 아래일경우, x == nil임.
+       // fix 가서 사용해야하므로 nil에 부모 설정.(nil의 더블블랙.)
+    rb_transplant(t,p,y);
+    y->left = p->left;
+    y->left->parent = y;
+    y->color = p->color;
+    
   }
-
-  if (y_original_color==RBTREE_BLACK) rbtree_erase_fix(t,p);//삭제되는 색이 black이면 조정 거치기.
+  free(p);
+  if (y_original_color==RBTREE_BLACK) rbtree_erase_fix(t,x);//삭제되는 색이 black이면 조정 거치기.
   return 0;
 }
-
+void recursive_to_array(const rbtree *t,node_t *temp,key_t *arr, const size_t n,int *i){
+  if(temp== t->nil) return;//종료조건
+  recursive_to_array(t,temp->left,arr,n,i);
+  arr[*i]=temp->key;
+  (*i)++;
+  recursive_to_array(t,temp->right,arr,n,i);
+}
 int rbtree_to_array(const rbtree *t, key_t *arr, const size_t n) {
-  // TODO: implement to_array
+  node_t *temp = t->root;
+  int i=0;
+  recursive_to_array(t,temp,arr,n,&i);
   return 0;
 }
